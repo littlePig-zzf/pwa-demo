@@ -8,56 +8,147 @@
 </head>
 <body>
 
-	<h3>Revision 56</h3>
+	<h3>Revision 75</h3>
   	<div class="main-text">Minimal PWA, open Console for more~~~</div>
 
 <script>
-function registerServiceWorker() {
-	if (navigator.serviceWorker != null) {
-	    return navigator.serviceWorker
-	    .register('sw.js')
-	    .then(function(registration) {
-	      	console.log('Registered events at scope: ', registration.scope);
-	      	return registration;
-	    })
-	    .catch(err => console.error('Unable to register service worker.', err));
-  }
+// 订阅通知
+let endpoint;
+let key;
+let authSecret;
+let vapidPublicKey = 'BAyb_WgaR0L0pODaR7wWkxJi__tWbM1MPBymyRDFEGjtDCWeRYS9EF7yGoCHLdHJi6hikYdg4MuYaK0XoD0qnoY';
+
+// 一个将 VAPID 钥从 base64 字符串转换成 Uint8 数组的函数
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
 }
 
-registerServiceWorker();
 
-function execute() {
-    registerServiceWorker().then(registration => {
-	    registration.showNotification('notification', {
-		    body: '我们将为您送上新的产品，请点击查看详情！', // 内容
-		    icon: 'a.png', // 图标
-		    data: {
-		        // 要发送的数据
-		        time: Date.now(),
-		        msg: 'this is index.html data',
-		        page: 'sport.html'
-		    }
-	    });
-	})
+// 注册 serviceWorker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+        .register('sw.js')
+        .then(registration => {
+            // console.log('successful', registration);
+
+            // 查看是否已经存在订阅权限
+            return registration.pushManager   
+                .getSubscription()
+                .then(subscription => {
+                    if (subscription) {
+                        return;
+                    }
+                    // 不存在就去申请一下
+                    return registration.pushManager  //没有继续往下执行
+                        .subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(
+                                vapidPublicKey
+                            )
+                        })
+                        .then(subscription => {
+
+                            // 申请成功后处理一下秘钥
+                            const rawKey = subscription.getKey
+                                ? subscription.getKey('p256dh')
+                                : '';
+                            key = rawKey
+                                ? btoa(
+                                      String.fromCharCode.apply(
+                                          null,
+                                          new Uint8Array(rawKey)
+                                      )
+                                  )
+                                : '';
+                            const rawAuthSecret = subscription.getKey
+                                ? subscription.getKey('auth')
+                                : '';
+                            authSecret = rawAuthSecret
+                                ? btoa(
+                                      String.fromCharCode.apply(
+                                          null,
+                                          new Uint8Array(rawAuthSecret)
+                                      )
+                                  )
+                                : '';
+
+                            // 将订阅信息传给服务器
+                            return fetch('./register', {
+                                method: 'post',
+                                headers: new Headers({
+                                    'content-type': 'application/json'
+                                }),
+                                body: JSON.stringify({
+                                    endpoint: subscription.endpoint,
+                                    key: key,
+                                    authSecret: authSecret
+                                })
+                            });
+                        });
+                });
+        })
+        .catch(err => {
+            throw err;
+        });
 }
 
-  window.addEventListener('load', function(){
-  	if (!('serviceWorker' in navigator)) return;
-    // 支持 push API
-    if (!('PushManager' in window)) return;
+// 单纯客户端发起的通知
 
-    // 获取通知权限
-    let promiseChain = new Promise((resolve, reject) => {
-        return Notification.requestPermission(result => resolve(result));
-    }).then(result => {
-        if (result === 'granted') {
-            // 有权限就直接执行，弹出通知
-            execute();
-        } else {
-            console.log('no permission');
-        }
-    });
-  })
+// function registerServiceWorker() {
+// 	if (navigator.serviceWorker != null) {
+// 	    return navigator.serviceWorker
+// 	    .register('sw.js')
+// 	    .then(function(registration) {
+// 	      	console.log('Registered events at scope: ', registration.scope);
+// 	      	return registration;
+// 	    })
+// 	    .catch(err => console.error('Unable to register service worker.', err));
+//   }
+// }
+
+// registerServiceWorker();
+
+// function execute() {
+//     registerServiceWorker().then(registration => {
+// 	    registration.showNotification('notification', {
+// 		    body: '我们将为您送上新的产品，请点击查看详情！', // 内容
+// 		    icon: 'a.png', // 图标
+// 		    data: {
+// 		        // 要发送的数据
+// 		        time: Date.now(),
+// 		        msg: 'this is index.html data',
+// 		        page: 'sport.html'
+// 		    }
+// 	    });
+// 	})
+// }
+
+//   window.addEventListener('load', function(){
+//   	if (!('serviceWorker' in navigator)) return;
+//     // 支持 push API
+//     if (!('PushManager' in window)) return;
+
+//     // 获取通知权限
+//     let promiseChain = new Promise((resolve, reject) => {
+//         return Notification.requestPermission(result => resolve(result));
+//     }).then(result => {
+//         if (result === 'granted') {
+//             // 有权限就直接执行，弹出通知
+//             execute();
+//         } else {
+//             console.log('no permission');
+//         }
+//     });
+//   })
 </script>
 </body>
 </html>

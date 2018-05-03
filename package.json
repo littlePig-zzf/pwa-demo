@@ -1,0 +1,19 @@
+{
+  "name": "pwademo",
+  "version": "1.0.0",
+  "description": "npm install http-server -g\r \thttp-server -c-1 # with cache disabled",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/littlePig-zzf/pwa-demo.git"
+  },
+  "author": "zzf",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/littlePig-zzf/pwa-demo/issues"
+  },
+  "homepage": "https://github.com/littlePig-zzf/pwa-demo#readme"
+}
