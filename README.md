@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # pwa-demo
 
 ### 安装http-server
