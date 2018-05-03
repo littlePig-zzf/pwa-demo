@@ -7,17 +7,57 @@
 	<link rel="stylesheet" type="text/css" href="main.css">
 </head>
 <body>
-	<h3>Revision 5</h3>
+
+	<h3>Revision 56</h3>
   	<div class="main-text">Minimal PWA, open Console for more~~~</div>
 
-
 <script>
-  if (navigator.serviceWorker != null) {
-    navigator.serviceWorker.register('sw.js')
-    .then(function(registration) {
-      console.log('Registered events at scope: ', registration.scope);
-    });
+function registerServiceWorker() {
+	if (navigator.serviceWorker != null) {
+	    return navigator.serviceWorker
+	    .register('sw.js')
+	    .then(function(registration) {
+	      	console.log('Registered events at scope: ', registration.scope);
+	      	return registration;
+	    })
+	    .catch(err => console.error('Unable to register service worker.', err));
   }
+}
+
+registerServiceWorker();
+
+function execute() {
+    registerServiceWorker().then(registration => {
+	    registration.showNotification('notification', {
+		    body: '我们将为您送上新的产品，请点击查看详情！', // 内容
+		    icon: 'a.png', // 图标
+		    data: {
+		        // 要发送的数据
+		        time: Date.now(),
+		        msg: 'this is index.html data',
+		        page: 'sport.html'
+		    }
+	    });
+	})
+}
+
+  window.addEventListener('load', function(){
+  	if (!('serviceWorker' in navigator)) return;
+    // 支持 push API
+    if (!('PushManager' in window)) return;
+
+    // 获取通知权限
+    let promiseChain = new Promise((resolve, reject) => {
+        return Notification.requestPermission(result => resolve(result));
+    }).then(result => {
+        if (result === 'granted') {
+            // 有权限就直接执行，弹出通知
+            execute();
+        } else {
+            console.log('no permission');
+        }
+    });
+  })
 </script>
 </body>
 </html>

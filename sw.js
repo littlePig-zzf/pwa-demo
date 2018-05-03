@@ -1,4 +1,4 @@
-var cacheStorageKey = 'minimal-pwa-5'
+var cacheStorageKey = 'minimal-pwa-56'
 
 var cacheList = [
   '/',
@@ -41,3 +41,26 @@ self.addEventListener('fetch', function(e) {
     })
   )
 })
+
+self.addEventListener('notificationclick', event => {
+	const data = event.notification.data;
+	console.log('data');
+	console.log(data);
+    let promiseChain = Promise.resolve();
+    if (!event.action) {
+        // 没有点击在按钮上
+        console.log('Notification click.');
+        // data 中有跳转页面信息则安排跳转
+        if (data && data.page) {
+            promiseChain = clients.openWindow(data.page);
+        }
+
+        return;
+    }
+
+    event.waitUntil(promiseChain);
+});
+
+self.addEventListener('notificationclose', event => {
+    console.log('notificationclose');
+});
